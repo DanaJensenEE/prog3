@@ -1,0 +1,480 @@
+/**************************************************************************//**
+ * @file
+ *
+ * @mainpage Program 3 - Knights Tour Puzzle Solver
+ *
+ * @section course_section Course Information
+ *
+ * @authors Dana Jensen
+ *
+ * @date April 8, 2013
+ *
+ * @par Instructor:
+ *        Roger Schrader
+ *
+ * @par Course:
+ *         CSC 250 - Section 1 - 10:00 am
+ *
+ * @par Location:
+ *         Classroom Building
+ *
+ * @section program_section Program Information
+ *
+ * @details This program will take a command line arguement when it is called
+ * and will check for their being a correct number of arguements by checking
+ * argc. The command line passed in is the user specified input puzzle file. 
+ * This file contains the knights tour puzzles that are to be solved by this
+ * program. In the file there needs to be three ints that correspond to the 
+ * size, starting row, and starting column, in that order. We open this file
+ * and create and open an output file to read in, solve and output each puzzle.
+ * Once given a board size and starting position we check these for a valid 
+ * tour by the chess "knight" piece. A knight's tour is the knight making legal
+ * moves to every spot on the board once and only once. To do this we make an
+ * array that represents the board and using recursion move the knight from the
+ * starting location to an ending location that satisfies the knight's tour
+ * rules. This program uses bruteforce to find a solution for the tour via 
+ * recursion by guessing the next possible move, starting from up and to the
+ * right and continuing clockwise through legal moves, and repeating the
+ * process from there.
+ *
+ * @section compile_section Compiling and Usage
+ *
+ * @par Compiling Instructions:
+ *      None
+ *
+ * @par Usage:
+   @verbatim
+   c:\prog2.exe
+   inputfile.***
+   @endverbatim
+ *
+ * @section todo_bugs_modification_section Todo, Bugs, and Modifications
+ *
+ * @bug 
+ *
+ * @todo Finish documenting with doxygen tags
+ *
+ * @par Modifications and Development Timeline:
+   @verbatim
+   Date          Modification
+   ------------  --------------------------------------------------------------
+   Apr 4, 2013   Began development. Wrote main, errors, openFilesandCheck,
+                 outputArray, outputFileName, solvePuzzle, allocatePuzzle,
+                 and deAlloc functions. Tested with 5x5, 6x6, and 7x7.
+                 Catches invalid starting locations, puzzles with no solutions,
+                 lack of memory for puzzles, and file failures. 
+
+   @endverbatim
+ *
+ *****************************************************************************/
+
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <cstring>
+#include <algorithm>
+#include <cmath>
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <conio.h>
+#include <Windows.h>
+#include <direct.h>
+#include <io.h>
+
+using namespace std;
+
+/*
+Function prototypes:
+*/
+string outputFileName ( char *argv[] );
+bool openFileandCheck ( string in, string out, ifstream &fin, ofstream &fout );
+bool allocatePuzzle ( int **&puzzle, int size, int row, int col );
+void deAlloc ( int **&puzzle, int i );
+void outputArray ( int **puzzle, int size, ofstream &fout );
+void errors ( int error, ofstream &fout );
+void solvePuzzle ( int **&puzzle, int row, int col, int place, int size,
+                   int &found, ofstream &fout );
+
+/**************************************************************************//**
+ * @author Dana Jensen
+ *
+ * @par Description:
+ * This function is the main entry and interaction point for the user. This
+ * function first creates the variables that we will need to read in and solve
+ * all the puzzles. First we check if we have the correct number of command
+ * line arguements, exiting if there are an incorrect amount. We then use
+ * the command line arguements to open the input puzzle file and create the
+ * name of our output file. We create the outputfile name by calling the
+ * function "outputFileName" function. And then we open both files with the
+ * "openFileandCheck" function. If both open correctly we move on to reading in
+ * and solving each puzzle from the input file. As we solve the puzzle we
+ * output its information (size, starting row, starting col) and then output
+ * the solved puzzle. This point catches many errors during the process
+ * including invalid start locations, not enough memory for puzzle array, and
+ * unsolved puzzles. For each of these errors we call the "errors" function
+ * to output the error to the file.
+ *
+ * @param[in] argc - Number of command line arguements
+ * @param[in] argv - Commandline arguements
+ *
+ * @returns none
+ *****************************************************************************/
+int main ( int argc, char *argv[] )
+{
+    ifstream fin;   //Input File
+    ofstream fout;  //Output File
+    //ifstream file;
+    string sIn;     //String for input file name
+    string sOut;    //String for output file name
+    bool trueFalse; //Bool for checking for successes at various points
+    int size, startRow, startCol; //Puzzle information
+    int found = 0;  //Marker for when we have found the first solution or none
+    int puzzleCase = 1; //Number of the case that we are solving.
+
+    //Checking for correct number of commandline arguements.
+    if ( argc != 2 )
+    {
+        cout << "Incorrect Program Usage" << endl;
+        cout << "Prog3.exe PuzzleInput.***" << endl;
+        system ( "pause" );
+        return 0;
+    }
+    //Opening input and output files (creating outputfile name)
+    sIn = argv[1];
+    sOut = outputFileName ( argv );
+    trueFalse = openFileandCheck ( sIn, sOut, fin, fout );
+    //Puzzle solving loop.
+    if ( trueFalse )
+    {
+        //While able to read in a number.
+        while ( fin >> size )
+        {
+            //read in remainder of puzzle specifications
+            fin >> startRow;
+            fin.ignore();
+            fin >> startCol;
+            //Print basic puzzle info to the outputfile.
+            fout << "Case: " << puzzleCase << " - ";
+            fout << size << " x " << size << endl;
+            fout << "     " << "Start Row: " << startRow;
+            fout << " Start Column: " << startCol << endl;
+            //Check if there are valid starting location.
+            if ( startRow >= size || startCol >= size || startRow < 0 || startCol < 0 )
+            {
+                errors ( 3, fout );
+            }
+            else
+            {
+                //Dynamically create and fill Puzzle array
+                int **puzzle = NULL;
+                trueFalse = allocatePuzzle ( puzzle, size, startRow, startCol );
+                //If we dont get the memory.
+                if ( !trueFalse )
+                {
+                    errors ( 1, fout );
+                }
+                //Solve the allocated puzzle.
+                else
+                {
+                    puzzle[startRow + 2][startCol + 2] = 1;
+                    solvePuzzle ( puzzle, startRow + 2, startCol + 2, 2, size,
+                                  found, fout );
+                    if ( found == 0 )
+                        errors ( 2, fout );
+                    deAlloc ( puzzle, size + 4 );
+                    found = 0;
+                }
+            }
+            fout << endl;
+            puzzleCase++;
+        }
+    }
+    else
+    {
+        cout << "Could Not Open Files" << endl;
+        system ( "pause" );
+        return 0;
+    }
+    return 0;
+}
+/**************************************************************************//**
+ * @author Dana Jensen
+ *
+ * @par Description:
+ * This function brings in the command line arguements and creates an output
+ * file name based on the user given input file. This function takes the input
+ * file and find where the file extension begins. It truncates off the .extens
+ * and then appends "Out.txt" to the end of it. It then returns this string
+ * to
+ *
+ * @param[in] argv - command line arguements that we use for file names
+ *
+ * @returns none
+ *****************************************************************************/
+string outputFileName ( char *argv[] )
+{
+    string s1 = argv[1];
+    string s2;
+    int place;
+    place = s1.find_first_of ( "." );
+
+    s2 = s1.substr ( 0, place );
+    s2 += "Out.txt";
+
+    return s2;
+}
+/**************************************************************************//**
+ * @author Dana Jensen
+ *
+ * @par Description:
+ * This function brings in filenames that we got from command line arguements
+ * and from the "outputFileName" function. We then open each of these files
+ * and check for success of each. If either fail we return false otherwise
+ * we continue and return true.
+ *
+ * @param[in] in - input file name as a string.
+ * @param[in] out - output file name as a string.
+ * @param[in] fin - ifstream variable for input file.
+ * @param[in] fout - ofstream variable for output file.
+ *
+ * @returns none
+ *****************************************************************************/
+bool openFileandCheck ( string in, string out, ifstream &fin, ofstream &fout )
+{
+    fin.open ( in );
+    fout.open ( out );
+    if ( !fin || !fout )
+    {
+        return false;
+    }
+    else
+        return true;
+}
+/**************************************************************************//**
+ * @author Dana Jensen
+ *
+ * @par Description:
+ * This function brings in the information for our puzzle that we got in int
+ * main to create and fill our array. We dynamically allocate an array that is
+ * 4 spaces larger in height and width to make our knights tour solving 
+ * algorithm easier. We first dynamically allocate size+4 nodes and check for 
+ * success. We then dynamically allocate size+4 columns for each row. During
+ * the second allocation we check for success at each row and return false if
+ * it fails. We then fill the entire array with -1 to create a border. Then
+ * we fill the interior of the array of size x size with all zeroes to create
+ * the game board. 
+ *
+ * @param[in] puzzle - pointer to our puzzle
+ * @param[in] size - int containing the size of knights tour board
+ * @param[in] row - int containing the starting row for our knight
+ * @param[in] col - int containing the starting col for our knight
+ *
+ * @returns none
+ *****************************************************************************/
+bool allocatePuzzle ( int **&puzzle, int size, int row, int col )
+{
+    int i = 0;
+    int j = 0;
+    puzzle = new ( nothrow ) int * [size + 4];
+    if ( puzzle == NULL )
+        return false;
+    for ( i = 0; i < size + 4; i++ )
+    {
+        puzzle[i] = new ( nothrow ) int [size + 4];
+        if ( puzzle[i] == NULL )
+        {
+            deAlloc ( puzzle, i );
+            return false;
+        }
+    }
+    for ( i = 0; i < size + 4; i++ )
+    {
+        for ( j = 0; j < size + 4; j++ )
+        {
+            puzzle[i][j] = -1;
+        }
+    }
+    for ( i = 2; i < size + 2; i++ )
+    {
+        for ( j = 2; j < size + 2; j++ )
+        {
+            puzzle[i][j] = 0;
+        }
+    }
+    return true;
+}
+/**************************************************************************//**
+ * @author Dana Jensen
+ *
+ * @par Description:
+ * This function brings in our puzzle whether it is full or not and releases
+ * any memory contained in it back to the system. When called during a failed
+ * allocation we make row equal whatever the largest row we allocated 
+ * successfully. Otherwise we go through all the rows releasing memory. 
+ *
+ * @param[in] puzzle - pointer to our puzzle
+ * @param[in] row - int containing the number of rows we have.
+ *
+ * @returns none
+ *****************************************************************************/
+void deAlloc ( int **&puzzle, int row )
+{
+    int i;
+    for ( i = 0; i < row; i++ )
+        delete [] puzzle[i];
+    delete [] puzzle;
+}
+/**************************************************************************//**
+ * @author Dana Jensen
+ *
+ * @par Description:
+ * This function brings in the puzzle board along with the size of the board
+ * and the output file. With this we print off the completed board without 
+ * the buffered border of -1s. 
+ *
+ * @param[in] puzzle - pointer to our puzzle board
+ * @param[in] size - int containing size of our board
+ * @param[in] fout - ofstream variable for our output file. 
+ *
+ * @returns none
+ *****************************************************************************/
+void outputArray ( int **puzzle, int size, ofstream &fout )
+{
+    int i = 0;
+    int j = 0;
+
+    for ( i = 2; i < size + 2; i++ )
+    {
+        for ( j = 2; j < size + 2; j++ )
+        {
+            if ( puzzle[i][j] < 10 )
+                fout << " ";
+            fout << puzzle[i][j] << " ";
+        }
+        fout << endl;
+    }
+}
+/**************************************************************************//**
+ * @author Dana Jensen
+ *
+ * @par Description:
+ * This function brings in a int that will relate to an error that we want to
+ * put out to the file. These include failed dynamic memory allocation for the
+ * board, failure to find a solution, and invalid starting location.
+ *
+ * @param[in] error - int that relates to a certain error that we will output
+ * to the file.
+ * @param[in] fout - ofstream variable for our output file.
+ *
+ * @returns none
+ *****************************************************************************/
+void errors ( int error, ofstream &fout )
+{
+    switch ( error )
+    {
+        case 1:
+            cout << "Could Not Allocate enough memory for the puzzle." << endl;
+            break;
+        case 2:
+            fout << "Could Not Find Solution" << endl;
+            break;
+        case 3:
+            fout << "Invalid starting Location" << endl;
+            break;
+    }
+}
+/**************************************************************************//**
+ * @author Dana Jensen
+ *
+ * @par Description:
+ * This function brings in our dynamically allocated puzzle that was created
+ * and filled by "allocatePuzzle", our start position for row and col, and 
+ * assigns our place to 1 for our first function call. We then check the 
+ * variables "found" and "place" to see if we have found a solution to our 
+ * puzzle at the starting location. If found is 1 then we have already found a
+ * solution and wont do anymore recursive calls. If we find that our current 
+ * place is equal to our size*size then we have found a solution and will call
+ * "outputArray" to print this solution and set found to 1. Otherwise we 
+ * attempt to move our knight from the current position to its next legal move
+ * starting from the top right and rotating clockwise to the far left. 
+ *
+ * @param[in] puzzle - pointer to our puzzle board 2d dynamic array
+ * @param[in] row - int that contains the row we are at(starting position for 
+ * the first function call)
+ * @param[in] col - int that contains the col we are at(starting position for 
+ * the first function call)
+ * @param[in] place - int of what spot we are at (# of moves we have made)
+ * @param[in] size - int containing the size of our board size x size.
+ * @param[in] found - int marking if we have found a solution so we don't look
+ * for more than one. 
+ * @param[in] fout - ofstream variable for our output file.
+ *
+ * @returns none
+ *****************************************************************************/
+void solvePuzzle ( int **&puzzle, int row, int col, int place, int size,
+                   int &found, ofstream &fout )
+{
+	//Look for if we have found a solution already
+    if ( found == 1 )
+    {
+        return;
+    }
+	//Look for if we have found a solution, output if so.
+    if ( place == size * size + 1 )
+    {
+        outputArray ( puzzle, size, fout );
+        found = 1;
+        return;
+    }
+	//Testing every possible movement from current position in order.
+    if ( puzzle[row - 2][col - 1] == 0 )
+    {
+        puzzle[row - 2][col - 1] = place;
+        solvePuzzle ( puzzle, row - 2, col - 1, place + 1, size, found, fout );
+        puzzle[row - 2][col - 1] = 0;
+    }
+    if ( puzzle[row - 2][col + 1] == 0 )
+    {
+        puzzle[row - 2][col + 1] = place;
+        solvePuzzle ( puzzle, row - 2, col + 1, place + 1, size, found, fout );
+        puzzle[row - 2][col + 1] = 0;
+    }
+    if ( puzzle[row - 1][col + 2] == 0 )
+    {
+        puzzle[row - 1][col + 2] = place;
+        solvePuzzle ( puzzle, row - 1, col + 2, place + 1, size, found, fout );
+        puzzle[row - 1][col + 2] = 0;
+    }
+    if ( puzzle[row + 1][col + 2] == 0 )
+    {
+        puzzle[row + 1][col + 2] = place;
+        solvePuzzle ( puzzle, row + 1, col + 2, place + 1, size, found, fout );
+        puzzle[row + 1][col + 2] = 0;
+    }
+    if ( puzzle[row + 2][col + 1] == 0 )
+    {
+        puzzle[row + 2][col + 1] = place;
+        solvePuzzle ( puzzle, row + 2, col + 1, place + 1, size, found, fout );
+        puzzle[row + 2][col + 1] = 0;
+    }
+    if ( puzzle[row + 2][col - 1] == 0 )
+    {
+        puzzle[row + 2][col - 1] = place;
+        solvePuzzle ( puzzle, row + 2, col - 1, place + 1, size, found, fout );
+        puzzle[row + 2][col - 1] = 0;
+    }
+    if ( puzzle[row + 1][col - 2] == 0 )
+    {
+        puzzle[row + 1][col - 2] = place;
+        solvePuzzle ( puzzle, row + 1, col - 2, place + 1, size, found, fout );
+        puzzle[row + 1][col - 2] = 0;
+    }
+    if ( puzzle[row - 1][col - 2] == 0 )
+    {
+        puzzle[row - 1][col - 2] = place;
+        solvePuzzle ( puzzle, row - 1, col - 2, place + 1, size, found, fout );
+        puzzle[row - 1][col - 2] = 0;
+    }
+    return;
+}

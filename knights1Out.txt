@@ -1,0 +1,59 @@
+Case: 1 - 5 x 5
+     Start Row: 1 Start Column: 1
+25 10 15  2 19 
+16  1 18  9 14 
+11 24  5 20  3 
+ 6 17 22 13  8 
+23 12  7  4 21 
+
+Case: 2 - 5 x 5
+     Start Row: 0 Start Column: 0
+ 1 10  5 18  3 
+14 19  2 11  6 
+ 9 22 13  4 17 
+20 15 24  7 12 
+23  8 21 16 25 
+
+Case: 3 - 6 x 6
+     Start Row: 2 Start Column: 3
+36 27  2 15  8 33 
+25 14  7 34  3 16 
+28 35 26  1 32  9 
+21 24 13  6 17  4 
+12 29 22 19 10 31 
+23 20 11 30  5 18 
+
+Case: 4 - 5 x 5
+     Start Row: 4 Start Column: 5
+Invalid starting Location
+
+Case: 5 - 5 x 5
+     Start Row: 2 Start Column: 4
+21 12  7  2 19 
+ 6 17 20 13  8 
+11 22  3 18  1 
+16  5 24  9 14 
+23 10 15  4 25 
+
+Case: 6 - 5 x 5
+     Start Row: 3 Start Column: 4
+Could Not Find Solution
+
+Case: 7 - 5 x 5
+     Start Row: 2 Start Column: 4
+21 12  7  2 19 
+ 6 17 20 13  8 
+11 22  3 18  1 
+16  5 24  9 14 
+23 10 15  4 25 
+
+Case: 8 - 7 x 7
+     Start Row: 1 Start Column: 1
+21 28 19  2 17  8 15 
+30  1 22  7 14  3 12 
+27 20 29 18 11 16  9 
+40 31 42 23  6 13  4 
+43 26 39 34 37 10 47 
+32 41 24 45 48  5 36 
+25 44 33 38 35 46 49 
+
